@@ -15,6 +15,7 @@
 #  http://www.r-project.org/Licenses/
 #
 
+
 #This function plot the category points for the variable we have choosed as the first parameter
 #, and the corresponding tesselation
 #----------------------Parameters
@@ -65,10 +66,6 @@ plot.voronoiprob <- function(voronoiVariable,LabelVar,CexVar,ColorVar,PchVar,AtL
   }
 }
 
-#Puede ocurrir que la variable solo tenga 2 categorias o que solo se predicen
-#2 categorias teniendo la variable mas de 2 categorias.
-#En equivFit estan las categorías iniciales y las que son visibles
-
 #This function plot the category points for the variable we have choosed as the first parameter
 #, and the corresponding tesselation
 #----------------------Parameters
@@ -91,9 +88,8 @@ plot2CategLine <- function(voronoiVariable,x,AtLeastR2,line,LabelVar,CexVar,Colo
       R2 = voronoiVariable$model$Nagelkerke
       equivFit = voronoiVariable$equivFit
 
-     #Only if the adjustment has a higher value than the cut point we plot the tesselation
      if(R2 >= AtLeastR2){
-         if(is.null(nrow(equivFit))){
+        if(is.null(nrow(equivFit))){
            numValDif = 2
          }else{
            numValDif = max(equivFit[1,])
@@ -120,7 +116,7 @@ plot2CategLine <- function(voronoiVariable,x,AtLeastR2,line,LabelVar,CexVar,Colo
          if(is.null(nrow(equivFit))){
            PosCatFit[1,1]=1
            PosCatFit[1,2]=2
-         }else{           
+         }else{
            n=1
            for(k in 1:numValDif){
               if(equivFit[2,k] > 0){
@@ -177,6 +173,31 @@ plot2CategLine <- function(voronoiVariable,x,AtLeastR2,line,LabelVar,CexVar,Colo
      }
 } 
 
+mvvSingleVariable <- function(nameVar,numcateg,beta,varstudyC,rowCoords,planex,planey,
+                              numFactors,QuitNotPredicted,penalization = 0.2, cte = TRUE,
+                              tol = 1e-04, maxiter = 200,ShowResults=TRUE){
+    nRowsdata <- nrow(varstudyC)
+    numValDif = numcateg
+
+    varNomBiplot <- list()
+    varNomBiplot$model <- list()
+    varNomBiplot$model$beta = beta
+    varNomBiplot$model$Nagelkerke = 0.02        
+    varNomBiplot$nameVar = nameVar
+    varNomBiplot$vorprob = 0   
+    varNomBiplot$regVisible = 0
+    varNomBiplot$numFit = 0
+    varNomBiplot$equivFit = 0
+
+    coords = cbind(rowCoords[,planex],rowCoords[,planey])            
+    
+    varNomBiplot = mvvObjectFill(varNomBiplot,numValDif,beta,coords,varstudyC,QuitNotPredicted,penalization=penalization,cte=cte,tol=tol,maxiter=maxiter,ShowResults=ShowResults)
+
+    class(varNomBiplot)='variableNominalBiplot'
+    return(varNomBiplot)
+
+}
+
 #This function print on screen principal characteristics of the nominal biplot object calculated for the data
 #----------------------Parameters
   #BLM: object of class type group.variables.tesselations
@@ -199,12 +220,13 @@ WriteMultinomialLogisticBiplot <- function(BLM){
 #This function check the data set to study keeping its information in a class
 #----------------------Parameters
   #datanom: it could be a data.frame or a matrix with the nominal data
+#Para que funcione bien las categorias no deben estar codificadas con ceros. Solo se corrige en el 
+#caso de dos categorias, pero no en el resto.  
 CheckDataSet <- function(datanom){
     
-    typeDataFrame = FALSE     #Data are matrix
-    nRowInit = nrow(datanom)
-    #If there are NA values, with this sentence we will drop the rows with any NA value
-    datanom <- na.omit(datanom)
+   typeDataFrame = FALSE     
+   nRowInit = nrow(datanom)
+   datanom <- na.omit(datanom)
     
     nRow = nrow(datanom)
     if(nRow < nRowInit){
@@ -228,7 +250,7 @@ CheckDataSet <- function(datanom){
               datanom[,i] = as.numeric(datanom[,i])
           }else if(is.numeric(datanom[,i])){
                     if(!is.integer(datanom[,i])){
-                       print(paste("Variable ",i," will be transformed to integer because it is not",sep=""))
+                       #print(paste("Variable ",i," will be transformed to integer.",sep=""))
                        datanom[,i] = as.integer(datanom[,i])
                     }
                     LevelNames[[contLevel]] = c(1:max(datanom[,i]))
@@ -258,7 +280,7 @@ CheckDataSet <- function(datanom){
                  contLevel = contLevel + 1
                  datanom[,i] = as.numeric(datanom[,i])                 
                  if(!is.integer(datanom[,i])){
-                   print(paste("Variable ",i," will be transformed to integer because it is not",sep=""))
+                   #print(paste("Variable ",i," will be transformed to integer.",sep=""))
                    datanom[,i] = as.integer(datanom[,i])
                  }        
               }
@@ -277,9 +299,6 @@ CheckDataSet <- function(datanom){
   		dimnames(datanom)[[2]] = ColNames
     }
 
-    #It is controlled than there aren't any jump between the values of the variables,so it is 
-    #necessary to keep the original values of the categories and renumber the variable values
-    #to present then consecutives.     
       numVarDef <- ncol(dataSet)    
       datanomcats = apply(dataSet[,1:numVarDef], 2, function(x) nlevels(as.factor(x)))
       for(i in 1:numVarDef){        
@@ -304,6 +323,22 @@ CheckDataSet <- function(datanom){
           }
           dataSet[,i] = newColdataSet
           LevelNames[[i]] = ActLevelNames
+        }else{
+          if((datanomcats[i] == 2)&(max(dataSet[,i]) < datanomcats[i])){
+            dataSet[,i] = dataSet[,i] + 1
+            ActLevelNames = NULL
+            columValuesOrd = sort(unique(dataSet[,i]))
+            for(j in 1:datanomcats[i]){
+              if(typeDataFrame){
+                if(length(LevelNames[[i]]) > 0){
+                    ActLevelNames <- c(ActLevelNames,LevelNames[[i]][columValuesOrd[j]])
+                }
+              }else{
+                  ActLevelNames = columValuesOrd
+              }
+            }
+            LevelNames[[i]] = ActLevelNames
+          }
         }
       }#end for
     
@@ -314,12 +349,14 @@ CheckDataSet <- function(datanom){
     data.nominal$datanom = dataSet
     data.nominal$RowNames = RowNames
     data.nominal$ColumNames = ColNames
-    data.nominal$LevelNames = LevelNames      
+    data.nominal$LevelNames = LevelNames       
     
     class(data.nominal)='data.nominal'
     return(data.nominal)
 
 }
+
+
 
 #This function plot the text beside the individual points at a concrete positicion.
 #, depending from the positive or negative coordinate in the first axis.
@@ -343,24 +380,30 @@ textsmart <- function(A, CexPoints, ColorPoints) {
 	}
 }
 
+
 #Function that calculates the variable models using the estimation of individuals by different methods.
   #----------------------Parameters--------------
   #datanom: matrix with the data to do the analysis
-  #itemCoords: estimation of the coordinates for the individuals in complete reduced dimension
+  #indRedCoords: estimation of the coordinates for the individuals in complete reduced dimension
   #tol = 1e-04, maxiter = 100, penalization = 0.1,: items used in RidgeMultinomialRegression procedure to calculate the parameters.
   #showIter = boolean parameter to decide if we want to show iteration information in RidgeMultinomialRegression
 #This function returns an object with so many columns as variables and it contains for each of them the 
 #ridge regression model with all the information.
-CalculateVariableModels <- function(datanom,itemCoords, penalization, tol, maxiter,showIter){
+CalculateVariableModels <- function(datanom,indRedCoords, penalization, tol, maxiter,showIter){
   nColsdata <- dim(datanom)[2]
   VariableModels = 0
 	for (j in 1:nColsdata){
-  	model = RidgeMultinomialRegression(datanom[, j], itemCoords, penalization = penalization, tol = tol, maxiter = maxiter,showIter = showIter)  	
-  	VariableModels=cbind(VariableModels,model)
-  }
+	  #print(paste("CalculateVariableModels: column ",j,sep="")) 
+  	model = RidgeMultinomialRegression(datanom[, j], indRedCoords, penalization = penalization, tol = tol, maxiter = maxiter,showIter = showIter)  	
+  	varEstimation = model
+  	varEstimation$name = dimnames(datanom)[[2]][j]
+  	VariableModels=cbind(VariableModels,varEstimation)
+  }                                                              
   VariableModels=VariableModels[,2:(nColsdata+1)]
   return(VariableModels)
 }
+
+
 
 #Function that builds the complete tesselations object with the information of all the variables.
   #----------------------Parameters--------------
@@ -375,20 +418,20 @@ BuildTesselationsObject <- function(nlbo,planex=1,planey=2,QuitNotPredicted,Rees
 
   nRowsdata <- dim(nlbo$dataSet$datanom)[1]
   nColsdata <- dim(nlbo$dataSet$datanom)[2]
-  numVar <- ncol(nlbo$dataSet$datanom)
+  numVar <- ncol(nlbo$dataSet$datanom)    
   datanomcats = apply(nlbo$dataSet$datanom[,1:numVar], 2, function(x) nlevels(as.factor(x)))
   numFactors <- nlbo$numFactors
-  fittingVars <- matrix(0,4,numVar) 
+  fittingVars <- matrix(0,4,numVar)  
   dimnames(fittingVars)[[2]]= dimnames(nlbo$dataSet$datanom)[[2]][1:numVar]
   dimnames(fittingVars)[[1]]= c("PCC","CoxSnell","Macfaden","Nagelkerke")
-  rowscoor = nlbo$ItemsCoords
+  rowscoor = nlbo$RowsCoords
   
   x <- cbind(rowscoor[,planex],rowscoor[,planey])
 
   variableTess = 0
 
   for(l in 1:numVar){
-    if(ShowResults) print(paste("Iterationn.Variable l=",l,sep=""))
+    if(ShowResults) print(paste("Iteracion.Variable l=",l,sep=""))
     nameVar = nlbo$dataSet$ColumNames[l]
     numValDif = datanomcats[[l]]
     y<-matrix(0,nRowsdata,1)
@@ -410,7 +453,7 @@ BuildTesselationsObject <- function(nlbo,planex=1,planey=2,QuitNotPredicted,Rees
     fittingVars[4,l]= round(mvv$model$Nagelkerke,2)
        
     variableTess=cbind(variableTess,mvv)
-  }#end for
+  }
   variableTess=variableTess[,2:(nColsdata+1)]
 
   if(ShowResults) print("Fitting adjustment for the variables")
@@ -428,6 +471,7 @@ BuildTesselationsObject <- function(nlbo,planex=1,planey=2,QuitNotPredicted,Rees
 
 }
 
+
 #Function that creates for a concrete variable an object with all the information about the tesselation and 
 #fitting for it.
   #------------------Parameters-----------------
@@ -442,7 +486,7 @@ BuildTesselationsObject <- function(nlbo,planex=1,planey=2,QuitNotPredicted,Rees
 MakeVoronoiVariable <- function(ivar,nlbo,planex,planey,betaRidge,QuitNotPredicted,ShowResults){
     nRowsdata <- dim(nlbo$dataSet$datanom)[1]
     nColsdata <- dim(nlbo$dataSet$datanom)[2]
-    numVar <- ncol(nlbo$dataSet$datanom)   
+    numVar <- ncol(nlbo$dataSet$datanom)    
     datanomcats = apply(nlbo$dataSet$datanom[,1:numVar], 2, function(x) nlevels(as.factor(x)))
     numFactors = nlbo$numFactors
     l=ivar
@@ -458,27 +502,40 @@ MakeVoronoiVariable <- function(ivar,nlbo,planex,planey,betaRidge,QuitNotPredict
     varNomBiplot$equivFit = 0
 
     beta = betaRidge$beta
-    coords = cbind(nlbo$ItemsCoords[,planex],nlbo$ItemsCoords[,planey])           
     varstudyC = nlbo$dataSet$datanom[1:nRowsdata,l]
-    if(ShowResults) print(datanomcats[l])
+    coords = cbind(nlbo$RowsCoords[,planex],nlbo$RowsCoords[,planey])           
     
+    varNomBiplot = mvvObjectFill(varNomBiplot,numValDif,beta,coords,varstudyC,QuitNotPredicted,nlbo$penalization,nlbo$cte,nlbo$tol,nlbo$maxiter,nlbo$show)
+
+    class(varNomBiplot)='variableNominalBiplot'
+    return(varNomBiplot)
+
+}
+
+mvvObjectFill <- function(varNomBiplot,numValDif,beta,coords,varstudyC,QuitNotPredicted=TRUE,penalization = 0.2, cte = TRUE, tol = 1e-04, maxiter = 200,ShowResults=TRUE){
+                          
+    nRowsdata = nrow(coords)
     varFitPCC = AdjustFitting(coords,varstudyC,beta,showTable=ShowResults)
     varNomBiplot$PCC = varFitPCC$PCC
 
-    if(nrow(beta) == 1){ #The variable presents only two categories
+    if(nrow(beta) == 1){ 
         varNomBiplot$vorprob = 0
         varNomBiplot$regVisible = 0
         varNomBiplot$numFit = 2
         varNomBiplot$equivFit = 0
-    }else{ #The variable presents more than two categories
         numValFitNow = apply(varFitPCC$varfit, 2, function(x) nlevels(as.factor(x)))
          if(numValFitNow == 1){
           varNomBiplot$numFit = 1
-          #The unique value that is predicted is keeped
           varNomBiplot$equivFit = varFitPCC$varfit[1,1]
-        }else{  #There are 2 or more categories predicted
+         }
+    }else{ 
+        numValFitNow = apply(varFitPCC$varfit, 2, function(x) nlevels(as.factor(x)))
+        if(numValFitNow == 1){
+          varNomBiplot$numFit = 1
+         varNomBiplot$equivFit = varFitPCC$varfit[1,1]
+        }else{  
             vorprob=Generators(beta)
-          	ngrup = nrow(beta) + 1
+         	  ngrup = nrow(beta) + 1
             regVisible = matrix(0,1,ngrup - sum(vorprob$hideCat))
             contregVisible = 1
             for(i in 1:ngrup){
@@ -490,8 +547,9 @@ MakeVoronoiVariable <- function(ivar,nlbo,planex,planey,betaRidge,QuitNotPredict
             numValFitAnt = numValDif
             if(numValFitNow < numValFitAnt){
                 equivFit<-matrix(0,3,numValDif)
+
                 for(j in 1:numValDif){
-                  equivFit[1,j] = j     
+                  equivFit[1,j] = j        
                 }
                 for(i in 1:nRowsdata){
                   if(sum(equivFit[2,]) < numValDif){
@@ -502,18 +560,18 @@ MakeVoronoiVariable <- function(ivar,nlbo,planex,planey,betaRidge,QuitNotPredict
                 for(j in 1:numValDif){
                   if(equivFit[2,j] > 0){
                     numFit = numFit + 1
-                    equivFit[3,j] = numFit 
+                    equivFit[3,j] = numFit  
                   }
                 }
                 yp<-matrix(0,nRowsdata,1)
                 for(i in 1:nRowsdata){
                   yp[i,1] = equivFit[3,varFitPCC$varfit[i,1]]
                 }
-                x <- cbind(nlbo$ItemsCoords[,planex],nlbo$ItemsCoords[,planey])
+                x <- coords
 
                 if(QuitNotPredicted == TRUE){
-                    while(numValFitNow < numValFitAnt){
-                      betaFRidge = RidgeMultinomialRegression(yp, x, nlbo$penalization, nlbo$cte, nlbo$tol, nlbo$maxiter,nlbo$show)
+                   while(numValFitNow < numValFitAnt){
+                      betaFRidge = RidgeMultinomialRegression(yp, x, penalization, cte, tol, maxiter)
                       betaF = betaFRidge$beta
                       if(nrow(betaF) == 1){
                         varNomBiplot$model$beta = betaF  
@@ -524,6 +582,7 @@ MakeVoronoiVariable <- function(ivar,nlbo,planex,planey,betaRidge,QuitNotPredict
                         break
                       }else{
                           vorprobF = Generators(betaF)
+    
                         	ngrupF = nrow(betaF) + 1
                           regVisibleF = matrix(0,1,ngrupF - sum(vorprobF$hideCat))
                           contregVisibleF = 1
@@ -537,7 +596,7 @@ MakeVoronoiVariable <- function(ivar,nlbo,planex,planey,betaRidge,QuitNotPredict
                           varfit<-matrix(0,nRowsdata,1)
                           varstudyCF = yp
                           varFitPCCF = AdjustFitting(coords,varstudyCF,betaF,showTable=ShowResults) 
-                      }
+                     }
                       yp<-matrix(0,nRowsdata,1)
                       maxVarFit = max(varFitPCCF$varfit)
                       varfitValues=matrix(0,1,maxVarFit)
@@ -547,6 +606,7 @@ MakeVoronoiVariable <- function(ivar,nlbo,planex,planey,betaRidge,QuitNotPredict
                       for(i in 1:nRowsdata){
                         yp[i,1] = sum(varfitValues[,1:varFitPCCF$varfit[i,1]])
                       }
+    
                       equivFit[2,]=0
                       for(i in 1:nRowsdata){
                           equivFit[2,which(equivFit[3,]==varFitPCCF$varfit[i,1])] = 1 
@@ -562,7 +622,7 @@ MakeVoronoiVariable <- function(ivar,nlbo,planex,planey,betaRidge,QuitNotPredict
     
                       numValFitAnt = numValFitNow
                       numValFitNow = apply(varFitPCCF$varfit, 2, function(x) nlevels(as.factor(x)))
-                   }#End while
+                   }#Fin del while
     
                    if(nrow(betaF) > 1){
                       varNomBiplot$vorprob = vorprobF
@@ -570,25 +630,22 @@ MakeVoronoiVariable <- function(ivar,nlbo,planex,planey,betaRidge,QuitNotPredict
                       varNomBiplot$numFit = numValFitNow
                       varNomBiplot$equivFit = equivFit
                    }
-                }else{#QuiteNotPredicted == FALSE
+                }else{
                       varNomBiplot$vorprob = vorprob
                       varNomBiplot$regVisible = regVisible
                       varNomBiplot$numFit = numValFitNow
                       varNomBiplot$equivFit = equivFit
                  }
-            }else{#It is predicted the same number of categories that variable presents
-                  #or we don't want to drop those categories not predicted, attending to QuitNotPredicted paramter
+            }else{
                   varNomBiplot$vorprob = vorprob
                   varNomBiplot$regVisible = regVisible
                   varNomBiplot$numFit = numValFitNow
                   varNomBiplot$equivFit = ngrup
             }
         }
-    }#End of if-else
-
-    class(varNomBiplot)='variableNominalBiplot'
+    }#fin del if-else
+    
     return(varNomBiplot)
-
 }
 
 
@@ -676,7 +733,7 @@ Eq2gSolve <- function(a,b,c){
       solns[1,1]= (-1)*c/b
       solns[1,2]= (-1)*c/b;
     }else if(a==0 && b==0){
-      print("The polynomial coefficients a and b are zero")
+      print("Coefficients a and b of the polynomial are zero")
     }else if((b^2 -4*a*c) < 0){
       print("The polynomial has complex roots")
     }else{
@@ -698,11 +755,10 @@ AdjustFitting <- function(coords,varstudyC,beta,showTable) {
   xp = coords[,1]
 	yp = coords[,2]
 
-  #Dimension of the coordinate matrix
   coorrows = nrow(coords)
   coorcols = ncol(coords)
 
-	# Probabilities for each category at the candidate points.
+
   xn = cbind(matrix(1, coorrows, 1), xp, yp)
 	probab = matrix(0, coorrows, ngrup)
 
@@ -712,14 +768,11 @@ AdjustFitting <- function(coords,varstudyC,beta,showTable) {
 		for (j in 1:(ngrup - 1)) probab[i, (j + 1)] = exp(sum(beta[j, ] * xn[i, ]))/suma
 		probab[i, 1] = 1/suma
 	}
-  #Create the matrix of fitted values, ie, in each row the categorie with the higher probabilitie value
   varfitted <- matrix(0,coorrows,1)
 	for (i in 1:coorrows) {
 	   varfitted[i] = which.max(probab[i,])
 	}
 
-  #We make a contingency table with the original values and de fitted ones
-  #library(gmodels)
   if(showTable){
       cTable <- CrossTable(varfitted,varstudyC,expected=TRUE,prop.r=TRUE,prop.c=TRUE,
                 prop.t=TRUE,prop.chisq=FALSE,chisq=FALSE,fisher=FALSE,
@@ -728,7 +781,7 @@ AdjustFitting <- function(coords,varstudyC,beta,showTable) {
 
   goodClasif = 0
  	for (i in 1:coorrows) {
- 	  if(varfitted[i]==varstudyC[i]){
+ 	  if(varfitted[i]==as.integer(varstudyC[i])){
       goodClasif = goodClasif + 1
     }
   }
@@ -779,7 +832,7 @@ IntersectSegments <- function(seg1P1x,seg1P1y,seg1P2x,seg1P2y,seg2P1x,seg2P1y,se
   return(Intersect)
 }
 
-#Function that builds a diagonal matrix with the values passed as parameter.
+#Function that builds the diagonal matrix with the values passed as parameter.
 #----------------------Parameters--------------
   #d: value or vector that will be presented in the diagonal matrix
 diagonal <- function(d){
@@ -789,12 +842,7 @@ diagonal <- function(d){
     D
 }
 
-#This function is used in multiquad to facilitate the calculation of the multidimensional quadrature.
-#It returns a matrix with all the posible combinations between the nodes (with their integer coordinates)
-# in all the dimensions
-#----------------------Parameters
-  #nnodos: number of nodes for the quadrature for each of the dimensions of the solution
-  #dims: number of the dimensions in the rediced space.
+
 patterns_eq <- function(nnodos, dims) {
 	I = matrix(1:nnodos)
 	for (i in 2:dims) {
@@ -808,17 +856,11 @@ patterns_eq <- function(nnodos, dims) {
 	return(I)
 }
 
-#This function calculates logit operation
-#----------------------Parameters
-  #p: a real number between 0 an 1
 logit <- function(p) {
 	logit = log(p/(1 - p))
 	return(logit)
 }
 
-#This function calculates the maximum value of all columns in a matrix
-#----------------------Parameters
-  #X: matrix of data
 ColMax <- function (X)
 {
   dimens = dim(X)
@@ -831,13 +873,6 @@ ColMax <- function (X)
   return(Maxs)
 }
 
-#This function is used by NominalLogBiplotEM in the alternated algorith to
-#evaluates the calculated models for each variable over the multidimensional 
-#gauss-hermite quadrature
-#----------------------Parameters
-  #X: matrix of data
-  #par: matrix of matrices, one for each model asociated to the variables with the estimated parameters
-  #Ncats: vector with the maximum value for each of the variables studied   
 EvalPolylogist <- function(X, par, Ncats){
 	MaxCat=dim(par)[1]
 	dims=dim(par)[2]-1
@@ -847,7 +882,11 @@ EvalPolylogist <- function(X, par, Ncats){
 	CumCats=cumsum(Ncats)
 
 	P=matrix(0,nnodos,Ncats[1])
-	z = exp(cbind(matrix(1, nnodos, 1), X) %*% t(par[,,1])[,1:(Ncats[1]-1)])
+  	if(is.vector(par[,,1])){
+  	    z = exp(cbind(matrix(1, nnodos, 1), X) %*% as.matrix(par[,,1])[,1:(Ncats[1]-1)])
+  	}else{
+  	    z = exp(cbind(matrix(1, nnodos, 1), X) %*% t(par[,,1])[,1:(Ncats[1]-1)])
+  	}
  	tot= 1+rowSums(z)
 	P[,1]=1/tot
 	for (k in 1:(Ncats[1]-1))
@@ -857,7 +896,11 @@ EvalPolylogist <- function(X, par, Ncats){
 
 	for (j in 2:nitems){
 		P=matrix(0,nnodos,Ncats[j])
-  	z = exp(cbind(matrix(1, nnodos, 1), X) %*% t(par[,,j])[,1:(Ncats[j]-1)])
+    	if(is.vector(par[,,1])){
+     	    z = exp(cbind(matrix(1, nnodos, 1), X) %*% as.matrix(par[,,j])[,1:(Ncats[j]-1)])
+    	}else{
+    	    z = exp(cbind(matrix(1, nnodos, 1), X) %*% t(par[,,j])[,1:(Ncats[j]-1)])
+    	}
   	tot= 1+rowSums(z)
   	P[,1]=1/tot
   	for (k in 1:(Ncats[j]-1))
@@ -868,4 +911,6 @@ EvalPolylogist <- function(X, par, Ncats){
 
 	return(PT)
 }
+
+
 

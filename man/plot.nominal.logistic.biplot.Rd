@@ -115,7 +115,7 @@ Maintainer: Julio Cesar Hernandez Sanchez <juliocesar_avila@usal.es>
 \examples{
 data(HairColor)
 nlbo = NominalLogisticBiplot(HairColor,sFormula=NULL,
-numFactors=2,coordinates="EM",penalization=0.2,show=FALSE)
+numFactors=2,method="EM",penalization=0.2,show=FALSE)
 plot(nlbo,QuitNotPredicted=TRUE,ReestimateInFocusPlane=TRUE,
 planex = 1,planey = 2,proofMode=TRUE,LabelInd=TRUE,
 AtLeastR2 = 0.01,xlimi=-1.5,xlimu=1.5,ylimi=-1.5,

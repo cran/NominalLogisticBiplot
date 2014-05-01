@@ -32,9 +32,9 @@ Jackel, P. (2005) \emph{A note on multivariate Gauss-Hermite quadrature}
 http://www.pjaeckel.webspace.virginmedia.com/ANoteOnMultivariateGaussHermiteQuadrature.pdf
 }
 \author{
-Julio Cesar Hernandez Sanchez, Jose Luis Vicente-Villardon
+Jose Luis Vicente-Villardon,Julio Cesar Hernandez Sanchez
 
-Maintainer: Julio Cesar Hernandez Sanchez <juliocesar_avila@usal.es>
+Maintainer: Jose Luis Vicente-Villardon <villardon@usal.es>
 }
 
 \seealso{

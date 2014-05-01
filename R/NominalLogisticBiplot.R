@@ -21,14 +21,16 @@
   #datanom: matrix with the data to do the analysis
   #sFormula: S Formula for selecting variables from a data frame o a matrix
   #numFactors: number of dimensions retained
-  #coordinates: Valid values: "EM", "ACM", "MIRT" ó "PCOA". This is the method to calculate the row coordinates
+  #method: Valid values: "EM", "ACM", "MIRT" o "PCOA". This is the method to calculate the row coordinates
   #rotation: "varimax". Type of rotation if the coordinates election is MIRT
   #metfsco : it can be: "EAP", "ML","MAP", o "WLE". Type of method to calculate the MIRT coordinates for the rows.
   #nnodos = 10: number of nodes in the quadrature procedure with EM coordinates method.
   #tol = 1e-04, maxiter = 100, penalization = 0.1, cte, show: items used in the alternated method used in EM procedure to calculate the parameters estimates.
 #This function returns a list with the original data matrix and the coordinates for the individuals
 #with so many colums like factors.
-NominalLogisticBiplot <- function(datanom,sFormula=NULL,numFactors=2,coordinates="EM",rotation="varimax",metfsco="EAP",nnodos = 10, tol = 1e-04, maxiter = 100, penalization = 0.1,cte=TRUE, show=FALSE){
+NominalLogisticBiplot <- function(datanom,sFormula=NULL,numFactors=2,method="EM",
+          rotation="varimax",metfsco="EAP",nnodos = 10, tol = 1e-04, maxiter = 100,
+          penalization = 0.1,cte=TRUE, initial=1,alfa=1,show=FALSE){       
 
   #We have to check if datanom is a data frame or a matrix to tackle with sFormula parameter
   if(!(is.null(sFormula))){
@@ -38,11 +40,11 @@ NominalLogisticBiplot <- function(datanom,sFormula=NULL,numFactors=2,coordinates
               datanom = model.frame(formula=sFormula,data=as.data.frame(datanom))
               datanom = as.matrix(datanom)
           }else{
-            print("It is not posible to use the formula passed as parameter. Data are not a data frame nor matrix")
+            print("It is not posible to use the formula passed as parameter. Data should be a data frame or a matrix")
           }
   }
   if(ncol(datanom) <= numFactors){
-    stop("It is not posible to reduce dimension because number of Factors is lower than variables in our data set")
+    stop("It is not posible to reduce dimension because number of factors is lower than variables in our data set")
   }
   dataSet = CheckDataSet(datanom)
   #We have now in dataSet structure all our data, the names for the row and colums and de levels if exists
@@ -55,41 +57,50 @@ NominalLogisticBiplot <- function(datanom,sFormula=NULL,numFactors=2,coordinates
 
   x <- matrix(0,nRowsdata,numFactors)
 
-  if (coordinates == "EM"){
-    xEM = NominalLogBiplotEM(datanom, dim = numFactors, nnodos = nnodos, tol = tol, maxiter = maxiter, penalization = penalization,showResults=show)
+ if (method == "EM"){
+    xEM = NominalLogBiplotEM(datanom, dim = numFactors, nnodos = nnodos, tol = tol,
+                   maxiter = maxiter, penalization = penalization,initial=initial,showResults=show)
     x = xEM$RowCoordinates
     VariableModels = xEM$ColumnModels
-    rotation="Not applicable"
-    metfsco="Not applicable"
-   }else if (coordinates == "MIRT"){
+    rotation=" "
+    metfsco=" "
+
+  }else if (method == "MIRT"){
       varStudy = matrix(0,nRowsdata,numVar)
       for(i in 1:numVar){
         varStudy[,i]= as.numeric(datanom[,i])
       }
-      dimnames(varStudy)[[2]]=dimnames(datanom)[[2]][1:numVar]
-      mod = mirt(varStudy,numFactors,"nominal")       
+      dimnames(varStudy)[[2]]=dimnames(datanom)[[2]][1:numVar]     
+      technical = list()
+      technical$NCYCLES = maxiter
+      nominalHighLow = matrix(0,2,numVar)
+      for(i in 1:numVar){
+      nominalHighLow[1,i] = as.numeric(max(as.matrix(datanom)[,i]))
+      nominalHighLow[2,i] = as.numeric(min(as.matrix(datanom)[,i]))
+      }                                                                           
+      mod = mirt(varStudy,numFactors,"nominal",rotate = rotation,nominal.highlow=nominalHighLow,technical=technical)           
       coef(mod)
       tabscores<-fscores(mod,full.scores=TRUE,method=metfsco)
-      x=tabscores[,(numVar+1):(numVar+numFactors)]
+      x=as.matrix(tabscores[,1:numFactors])
       VariableModels = CalculateVariableModels(datanom,x, penalization, tol, maxiter,show)
-      nnodos="Not applicable"
-
-  }else if (coordinates == "ACM"){
+      nnodos=" "
+      
+  }else if (method == "ACM"){ 
       G = NominalMatrix2Binary(datanom)
-    	corr=afc(G,neje=numFactors)
-    	x=corr$RowCoordinates[,1:numFactors]*10        
+    	corr=afc(G,dim=numFactors)
+    	x=as.matrix(corr$RowCoordinates[,1:numFactors]*10)       
       VariableModels = CalculateVariableModels(datanom,x, penalization, tol, maxiter,show)
-      rotation="Not applicable"
-      metfsco="Not applicable"
-      nnodos="Not applicable"
+      rotation=" "
+      metfsco=" "
+      nnodos=" "
    }else{
       datanom.hamm <- NominalDistances(datanom[1:nRowsdata,1:numVar])
-      datanom.pco <- PCoA(datanom.hamm, r = numFactors)
-      x = datanom.pco$RowCoordinates
+     datanom.pco <- PCoA(datanom.hamm, r = numFactors)
+      x = as.matrix(datanom.pco$RowCoordinates)
       VariableModels = CalculateVariableModels(datanom,x, penalization, tol, maxiter,show)
-      rotation="Not applicable"
-      metfsco="Not applicable"
-      nnodos="Not applicable"
+      rotation=" "
+      metfsco=" "
+      nnodos=" "
 
    }
    dimnames(x)[[1]]=dimnames(datanom)[[1]]    
@@ -97,10 +108,10 @@ NominalLogisticBiplot <- function(datanom,sFormula=NULL,numFactors=2,coordinates
    
     nominal.logistic.biplot<-list()
     nominal.logistic.biplot$dataSet = dataSet
-    nominal.logistic.biplot$ItemsCoords = x
+    nominal.logistic.biplot$RowsCoords = x
     nominal.logistic.biplot$VariableModels = VariableModels
     nominal.logistic.biplot$NumFactors = numFactors
-    nominal.logistic.biplot$Coordinates = coordinates
+    nominal.logistic.biplot$Method = method
     nominal.logistic.biplot$Rotation = rotation
     nominal.logistic.biplot$Methodfscores = metfsco
     nominal.logistic.biplot$NumNodos = nnodos
@@ -116,29 +127,61 @@ NominalLogisticBiplot <- function(datanom,sFormula=NULL,numFactors=2,coordinates
 
 #This function shows a summary of the principal results from the estimation for rows and variables.
 #----------------------Parameters
-  #x: object with the information needed about all the variables and individuals
-summary.nominal.logistic.biplot <- function(object,...) {
+  #object: object with the information needed about all the variables and individuals
+summary.nominal.logistic.biplot <- function(object,completeEstim = FALSE,coorInd = FALSE, ...) {
       x = object
     	cat(paste("Nominal Logistic Biplot Estimation", "with Ridge Penalizations", x$penalization, " and logit link"), "\n")
     	cat("n: ", nrow(x$dataSet$datanom), "\n")
-    	cat(paste("Coordinates for the individuals: ", x$Coordinates ), "\n\n")
+    	aic=0
+    	bic=0
     	for(i in 1:ncol(x$dataSet$datanom)){
-          cat("Variable: ",x$dataSet$ColumNames[i],"\n")
-        	cat("logLikelihood: ", x$VariableModels[,i]$logLik, "\n")    	
-        	coefs <- array(0, c(nrow(x$VariableModels[,i]$beta), x$NumFactors + 1, 4))
-        	dimnames(coefs) = list(NULL,NULL, c("Estimate coefficients", "Std. Error", "z value", "Pr(>|z|)"))
-        	coefs[,,1] <- x$VariableModels[,i]$beta
-        	coefs[,,2] <- x$VariableModels[,i]$stderr
-        	coefs[,,3] <- x$VariableModels[,i]$beta/x$VariableModels[,i]$stderr
-        	coefs[,,4] <- 2 * (1 - pnorm(abs(coefs[,,3])))
-        	print(coefs)      	
-        	cat("\n\nPseudo R-squared : \n")
-        	cat("Cox & Snell: ", x$VariableModels[,i]$CoxSnell, "\n")
-        	cat("Nagelkerke: ", x$VariableModels[,i]$Nagelkerke, "\n")
-        	cat("MacFaden: ", x$VariableModels[,i]$MacFaden, "\n")
-         	cat("\n\nPercentage of correct classifications : \n")
-        	cat("PCC: ", x$VariableModels[,i]$PercentCorrect, "%\n") 
-        	cat("\n\n ----------------------------------------------- \n") 
+    	     aic = aic + x$VariableModels[,i]$AIC
+    	     bic = bic + x$VariableModels[,i]$BIC    	     
+    	}
+    	cat("AIC: ", aic, "\n")
+    	cat("BIC: ", bic, "\n")
+    	
+	    smmr = matrix(0,8,ncol(x$dataSet$datanom))
+      dimnames(smmr)[[1]] = c("loglikelihood","Deviance","AIC","BIC","CoxSnell","Nagelkerke","McFaden","PCC") 
+      dimnames(smmr)[[2]] = x$dataSet$ColumNames
+    	cat("\nGoodness-of-Fit Statistics for the variables:\n")
+ 	    for(j in 1:ncol(x$dataSet$datanom)){
+    	    smmr[1,j] = x$VariableModels[,j]$logLik
+    	    smmr[2,j] = x$VariableModels[,j]$Deviance
+    	    smmr[3,j] = x$VariableModels[,j]$AIC
+    	    smmr[4,j] = x$VariableModels[,j]$BIC
+    	    smmr[5,j] = x$VariableModels[,j]$CoxSnell
+    	    smmr[6,j] = x$VariableModels[,j]$Nagelkerke
+    	    smmr[7,j] = x$VariableModels[,j]$MacFaden
+    	    smmr[8,j] = x$VariableModels[,j]$PercentCorrect
+	    }
+	    print(smmr)
+
+    	if(coorInd){
+    	   cat("\nCoordinates for the individuals: \n\n")
+       	 print(x$RowsCoords)
+    	}
+
+    	if(completeEstim){
+    	    cat("\nCoefficients of the estimated variables: \n")
+    	    dimNamesCols = "ind"
+    	    dimNamesCols = c(dimNamesCols, "x1")
+          if(x$NumFactors > 1){    	    
+        	   for (i in 2:x$NumFactors)
+                dimNamesCols = c(dimNamesCols, paste("x", i,sep=""))
+          }
+          dimNamesRows = " "
+        	for(i in 1:ncol(x$dataSet$datanom)){
+              cat("Variable: ",x$dataSet$ColumNames[i],"\n")
+            	coefs <- array(0, c(nrow(x$VariableModels[,i]$beta), x$NumFactors + 1, 4))
+            	dimnames(coefs) = list(dimNamesRows,dimNamesCols, c("Estimate coefficients", "Std. Error", "z value", "Pr(>|z|)"))
+            	coefs[,,1] <- x$VariableModels[,i]$beta
+            	coefs[,,2] <- x$VariableModels[,i]$stderr
+            	coefs[,,3] <- x$VariableModels[,i]$beta/x$VariableModels[,i]$stderr
+            	coefs[,,4] <- 2 * (1 - pnorm(abs(coefs[,,3])))
+            	print(coefs)      	
+            	cat("\n\n ----------------------------------------------- \n") 
+        	}
     	}
 }
 
@@ -174,6 +217,20 @@ plot.nominal.logistic.biplot <- function(x,planex=1,planey=2,QuitNotPredicted=TR
         LabelInd = TRUE,CexInd = NULL, CexVar = NULL, ColorInd = NULL, ColorVar = NULL,
         SmartLabels = FALSE, PchInd = NULL, PchVar = NULL,LabelValuesVar=NULL,ShowResults=FALSE,...) {
   nlbo = x
+  
+  if(nlbo$NumFactors == 1){
+    stop("There is only one factor and it is not posible to represent the biplot on two dimensions.")
+  }
+  
+  if(planex == planey){
+    stop("The plane of the biplot is not correct. It should be selected different factors.")
+  }
+  
+  if((planex > nlbo$NumFactors) | (planey > nlbo$NumFactors)){
+    stop(paste("With ",nlbo$NumFactors, " factors it is not posible to analyze the plane ",planex,"-",planey,". Please,
+                 select another plane.",sep=""))
+  }
+  
   BLM = BuildTesselationsObject(nlbo,planex,planey,QuitNotPredicted,ReestimateInFocusPlane,ShowResults)
   if(ShowResults){
     WriteMultinomialLogisticBiplot(BLM)
@@ -181,7 +238,6 @@ plot.nominal.logistic.biplot <- function(x,planex=1,planey=2,QuitNotPredicted=TR
   
   n = nrow(nlbo$dataSet$datanom)
 	p = ncol(nlbo$dataSet$datanom)
-	# Setting the properties of data
 	RowNames = nlbo$dataSet$RowNames
 	VarNames = nlbo$dataSet$ColumNames
 	
@@ -189,7 +245,6 @@ plot.nominal.logistic.biplot <- function(x,planex=1,planey=2,QuitNotPredicted=TR
 	for (i in 2:nlbo$NumFactors)
      DimNames = c(DimNames, paste("Dim", i))
 
-  # Determining sizes and colors of the points
 	if (is.null(CexInd)){
 		CexInd = rep(0.5, n)
 	}else{
@@ -251,7 +306,6 @@ plot.nominal.logistic.biplot <- function(x,planex=1,planey=2,QuitNotPredicted=TR
              PchVar = PchVar[1:p]
            }	
   }
-
   if (is.null(ColorVar)){
 		ColorVar = colors()[20 + 2*c(1:p)]
 	}else{
@@ -264,7 +318,7 @@ plot.nominal.logistic.biplot <- function(x,planex=1,planey=2,QuitNotPredicted=TR
              ColorVar = ColorVar[1:p]
            }	    
   }
-    
+  
 	if (!is.null(LabelValuesVar)){
      if (length(LabelValuesVar) > p){
        LabelValuesVar = LabelValuesVar[1:p]    	   
@@ -280,8 +334,8 @@ plot.nominal.logistic.biplot <- function(x,planex=1,planey=2,QuitNotPredicted=TR
           }
        }
      }else{
-       #In this case it is specified lower or equal labels than variables from the data set
-       print("Labels for the values of the variables probably will not be showed as desired because it exists variables not specified in the parameter") 
+       print("Labels for the values of the variables probably will not be showed as desired because it exists
+             variables not specified in the parameter") 
        for(i in 1:length(LabelValuesVar)){
           if(!is.null(nlbo$dataSet$LevelNames[[i]])){
                if(length(LabelValuesVar[[i]]) < length(nlbo$dataSet$LevelNames[[i]])){
@@ -315,7 +369,7 @@ plot.nominal.logistic.biplot <- function(x,planex=1,planey=2,QuitNotPredicted=TR
    	    }
      }
   }
-    
+   
 	if (ShowAxis) {
 		xaxt = "s"
 		yaxt = "s"
@@ -340,12 +394,13 @@ plot.nominal.logistic.biplot <- function(x,planex=1,planey=2,QuitNotPredicted=TR
        plot(BLM$rowCoords[,1], BLM$rowCoords[,2], cex = 0,asp=1, xaxt = xaxt, yaxt = yaxt ,xlim=c(xlimi,xlimu),ylim=c(ylimi,ylimu),
           main="Nominal Logistic Biplot", xlab=paste("Axis ",BLM$planex,sep=""), ylab=paste("Axis ",BLM$planey,sep=""))
     }
-    legend("bottomright", legend=VarNames, col= ColorVar,pch=PchVar,cex=0.5)
+    if(PlotVars){
+      legend("bottomright", legend=VarNames, col= ColorVar,pch=PchVar,cex=0.5)
+    }
   }
 
   if(PlotVars){
     for(l in 1:(BLM$numVar)){
-      if(ShowResults) print(paste("l:",l,sep=""))
       if(proofMode == TRUE){
         dev.new()
         if(PlotInd == TRUE){
@@ -363,12 +418,9 @@ plot.nominal.logistic.biplot <- function(x,planex=1,planey=2,QuitNotPredicted=TR
       }
       
       if(BLM$biplotNom[,l]$numFit==1){
-          #If we only predict one categorie, the baricenter of the points is calculated
-          Barx=sum(BLM$rowCoords[,1])/nrow(BLM$rowCoords)
+         Barx=sum(BLM$rowCoords[,1])/nrow(BLM$rowCoords)
           Bary=sum(BLM$rowCoords[,2])/nrow(BLM$rowCoords)
           points(Barx,Bary,pch=PchVar,cex=CexVar,col=ColorVar)
-          
-          #In this case BLM$biplotNom[,l]$equivFit has the predicted category.
           if(LabelVar){
               if(is.null(LabelValuesVar)){
                 	text(Barx,Bary, paste(BLM$biplotNom[,l]$equivFit,"_",BLM$biplotNom[,l]$nameVar ,sep="") , col = ColorVar, cex = CexVar,pos=1,offset=0.1)
@@ -377,23 +429,19 @@ plot.nominal.logistic.biplot <- function(x,planex=1,planey=2,QuitNotPredicted=TR
               }
            } 
       }else if(BLM$biplotNom[,l]$numFit==2){
-               #Only two categories from the variable are predicted.
-               if(max(nlbo$dataSet$datanom[,l]) == 2){
-                  #The variable has two categories 
+              if(max(nlbo$dataSet$datanom[,l]) == 2){
                   x = cbind(BLM$rowCoords[,1],BLM$rowCoords[,2])
                   plot2CategLine(BLM$biplotNom[,l],x,AtLeastR2,line=linesVoronoi,LabelVar=LabelVar,CexVar=CexVar,ColorVar=ColorVar[l],PchVar=PchVar[l],LabValVar=LabelValuesVar[[l]])
                }else if(QuitNotPredicted == TRUE){
-                         #The variable has more than 2 categories and we drop those who are not predicted
                          x = cbind(BLM$rowCoords[,1],BLM$rowCoords[,2])
                          plot2CategLine(BLM$biplotNom[,l],x,AtLeastR2,line=linesVoronoi,LabelVar=LabelVar,CexVar=CexVar,ColorVar=ColorVar[l],PchVar=PchVar[l],LabValVar=LabelValuesVar[[l]])                 
                      }else{
-                         #The variable has more than 2 categories and we don't drop those who are not predicted
                          plot.voronoiprob(BLM$biplotNom[,l],LabelVar=LabelVar,CexVar=CexVar,ColorVar=ColorVar[l],PchVar=PchVar[l],AtLeastR2=AtLeastR2,lines=linesVoronoi,LabValVar=LabelValuesVar[[l]])
                      }
              }else{
-                #More than two categories for the variable are predicted
                 plot.voronoiprob(BLM$biplotNom[,l],LabelVar=LabelVar,CexVar=CexVar,ColorVar=ColorVar[l],PchVar=PchVar[l],AtLeastR2=AtLeastR2,lines=linesVoronoi,LabValVar=LabelValuesVar[[l]])
              }
     }#end for
   }#end if(PlotVars)
 }
+

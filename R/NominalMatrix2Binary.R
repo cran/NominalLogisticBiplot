@@ -30,3 +30,4 @@ NominalMatrix2Binary <- function(Y){
 
 	return(G)
 }
+

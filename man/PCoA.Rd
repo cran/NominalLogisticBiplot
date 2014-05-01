@@ -32,9 +32,9 @@ An object with has some components:
 Gower,J.C. (1966) \emph{Some distance properties of latent root and vector methods used in multivariate analysis}. Biometrika, 53, 325--338.
 }
 \author{
-Julio Cesar Hernandez Sanchez, Jose Luis Vicente-Villardon
+Jose Luis Vicente-Villardon,Julio Cesar Hernandez Sanchez
 
-Maintainer: Julio Cesar Hernandez Sanchez <juliocesar_avila@usal.es>
+Maintainer: Jose Luis Vicente-Villardon <villardon@usal.es>
 }
 
 \seealso{

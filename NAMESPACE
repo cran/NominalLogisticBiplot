@@ -1,4 +1,5 @@
+import(mirt,MASS,gmodels)
 export(NominalLogisticBiplot,hermquad,multiquad,Nominal2Binary,NominalMatrix2Binary,
-NominalDistances,PCoA,afc,polylogist,RidgeMultinomialRegression,NominalLogBiplotEM,Generators)
+NominalDistances,PCoA,afc,polylogist,RidgeMultinomialRegression,NominalLogBiplotEM,Generators,plotNominalVariable,plotNominalFittedVariable)
 S3method(summary,nominal.logistic.biplot)
 S3method(plot,nominal.logistic.biplot)

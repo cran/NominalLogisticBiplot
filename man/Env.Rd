@@ -1,10 +1,10 @@
 \name{Env}
 \alias{Env}
 \title{
-  Ecological Factors in Farm Management
+  Ecological Factors in Farm Management.
 }
 \description{
-  The farmsEnv data frame has 20 rows and 4 columns. The rows are farms
+  The farms Env data frame has 20 rows and 4 columns. The rows are farms
   on the Dutch island of Terschelling and the columns are factors
   describing the management of grassland.
 }
@@ -14,10 +14,11 @@ data(Env)
 \format{
   This data frame contains the following columns:
   \describe{
-    \item{Mois}{five levels of soil moisture}
-    \item{Manag}{Grassland management type (SF = standard,
-      BF = biological, HF = hobby farming,
-      NM = nature conservation).
+    \item{Mois}{five levels of soil moisture,although level 3
+        does not occur in the data. Levels are labelled M1, M2, M4 and M5.}
+    \item{Manag}{Grassland management type (SF = standard farming,
+      BF = biological farming, HF = hobby farming,
+      NM = nature conservation management).
     }
     \item{Use}{Grassland use (U1 = it exists production, U2 =
       intermediate,U3 = grazing).

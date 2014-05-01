@@ -45,10 +45,8 @@ An object that has the following components:
  \item{stderr }{Standard error of the estimates}
  \item{logLik }{Logarithm of the likelihood}
  \item{Deviance }{Deviance of the model}
- \item{beta }{Estimated coefficients for the multinomial logistic regression}
- \item{stderr }{Standard error of the fitting}
- \item{logLik }{Logarith of the veromisility}
- \item{Deviance }{Deviance of the model}
+ \item{AIC }{Akaike information criterion indicator} 
+ \item{BIC }{Bayesian information criterion indicator} 
  \item{NullDeviance }{Deviance of the null model}
  \item{Difference }{Difference between the two deviance values}
  \item{df }{Degrees of freedom}
@@ -83,7 +81,7 @@ Maintainer: Julio Cesar Hernandez Sanchez <juliocesar_avila@usal.es>
   data(HairColor)
   data = data.matrix(HairColor)
   G = NominalMatrix2Binary(data)
-  mca=afc(G,neje=2)
+  mca=afc(G,dim=2)
   depVar = data[,1]
   rmr = RidgeMultinomialRegression(depVar,mca$RowCoordinates[,1:2],penalization=0.1)
   rmr

@@ -1,5 +1,5 @@
 # file NominalLogisticBiplot/R/RidgeMultinomialRegression.R
-# copyright (C) 2012-2013 J.C. Hernandez and J.L. Vicente-Villardon
+# copyright (C) 2012-2013 J.L. Vicente-Villardon and J.C. Hernandez
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,12 @@
   #maxiter : value to decide if the algorith should continue
   #showIter: boolean parameter if we want to see values in each iteration of the process.
 RidgeMultinomialRegression <- function(y, x, penalization = 0.2, cte = TRUE, tol = 1e-04, maxiter = 200,showIter=FALSE){
-	n <- nrow(x)
+  if(is.matrix(x)){
+  	n <- nrow(x)
+  }else{
+    n <- length(x)
+  }
+
 	Model=polylogist(y, x, penalization=penalization, tol=tol, maxiter=maxiter, show=showIter)
 	Null=polylogist(y, matrix(1,n,1), penalization=penalization, tol=tol, maxiter=maxiter, show=showIter, cte = FALSE)
 

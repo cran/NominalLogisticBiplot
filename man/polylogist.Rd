@@ -54,6 +54,8 @@ An object of class \code{"polylogist"}.  This has components
  \item{stderr }{Standard error of the estimates}
  \item{logLik }{Logarithm of the likelihood}
  \item{Deviance }{Deviance of the model}
+ \item{AIC }{Akaike information criterion indicator} 
+ \item{BIC }{Bayesian information criterion indicator} 
 }
 \references{
   Albert,A. & Anderson,J.A. (1984),\emph{On the existence of maximum likelihood estimates in logistic regression models}, Biometrika 71(1), 1--10.
@@ -78,7 +80,7 @@ Maintainer: Julio Cesar Hernandez Sanchez <juliocesar_avila@usal.es>
   data(HairColor)
   data = data.matrix(HairColor)
   G = NominalMatrix2Binary(data)
-  mca=afc(G,neje=2)
+  mca=afc(G,dim=2)
   depVar = data[,1]
   nomreg = polylogist(depVar,mca$RowCoordinates[,1:2],penalization=0.1)
   nomreg

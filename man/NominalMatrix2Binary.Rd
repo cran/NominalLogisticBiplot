@@ -19,9 +19,9 @@ A matrix with nominal variables measured for a set of individuals. Input must be
 \item{G }{The binary indicator matrix asociated to the nominal matrix}
 }
 \author{
-Julio Cesar Hernandez Sanchez, Jose Luis Vicente-Villardon
+Jose Luis Vicente-Villardon,Julio Cesar Hernandez Sanchez
 
-Maintainer: Julio Cesar Hernandez Sanchez <juliocesar_avila@usal.es>
+Maintainer: Jose Luis Vicente-Villardon <villardon@usal.es>
 }
 \seealso{
 \code{\link{Nominal2Binary}}

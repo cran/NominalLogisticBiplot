@@ -19,17 +19,13 @@
 # or also known as ability (E-step), and parameters of each model for the variables (M-step).
 # The algorith uses multidimensional Gauss-Hermite quadrature and Ridge Regression to solve the
 # separation problem in logistic regression.
-#----------------------Parameters--------------
-  #x: matrix with the nominal data 
-  #dim: dimension of our solution or reduced space
-  #penalization: value to correct the separation problem through the ridge regression
-  #cte : it will be true if the model has an independent term.
-  #tol : value to decide if the algorith should continue
-  #maxiter : value to decide if the algorith should continue
-  #Plot: Boolean parameter to decide if we want to plot the ability(rows)
-  #showResults: boolean parameter if we want to see values in each iteration of the process.
-NominalLogBiplotEM <- function(x, dim = 2, nnodos = 10, tol = 1e-04, maxiter = 100, penalization = 0.2,Plot=FALSE,showResults=FALSE) {
-	################## Nodes and weights from the Gauss-Hermite quadrature
+NominalLogBiplotEM <- function(x, dim = 2, nnodos = 10, tol = 1e-04, maxiter = 100, penalization = 0.2,
+                               initial=1,alfa=1,Plot=FALSE,showResults=FALSE) {
+  initials = c("MCA","MIRT")
+  if(is.numeric(initial)){
+    initial = initials[initial]                                                                                         
+  }
+
 	Q = multiquad(nnodos, dim)
 	X = Q$X
 	A = Q$A
@@ -40,18 +36,38 @@ NominalLogBiplotEM <- function(x, dim = 2, nnodos = 10, tol = 1e-04, maxiter = 1
 	G = NominalMatrix2Binary(x)
   s = dim(G)[1]
 	n = dim(G)[2]
-	#Array to keep the models for each variable using Ridge Regression
 	VariableModels = 0
-	# Inicial parameters
-	par = array(0, c(Maxcat-1, dim + 1, p))
-	corr=afc(G,neje=dim)
-	ability=corr$RowCoordinates[,1:dim]
+
+  par = array(0, c(Maxcat-1, dim + 1, p))    
+
+	if(showResults){print("Calculating initial coordinates")}
+  if(initial == "MCA"){
+      dimension = dim
+     	corr = afc(G, dim = dimension,alpha=alfa)
+    	ability = corr$RowCoordinates[, 1:dim]
+  }
+  if(initial == "MIRT"){
+      technical = list()
+      technical$NCYCLES = maxiter            
+      nominalHighLow = matrix(0,2,p)
+      for(i in 1:p){
+          nominalHighLow[1,i] = as.numeric(max(x[,i]))
+          nominalHighLow[2,i] = as.numeric(min(x[,i]))
+      }                                                                           
+      mod = mirt(x ,dim,"nominal",nominal.highlow=nominalHighLow,technical=technical)
+      ability = fscores(mod,full.scores=T)[,1:dim] 
+  }  
+	if(showResults){print("Initial coordinates calculated")}
+	
 	logLikold=0
 	for (j in 1:p){
+	  if(showResults){print(paste("Adjusting variable ",j,sep=""))} 
   	model = RidgeMultinomialRegression(x[, j], ability, penalization = penalization, tol = tol, maxiter = maxiter,showIter = showResults)  	
-  	VariableModels=cbind(VariableModels,model)
-  	par[1:(Ncats[j]-1),,j] =model$beta
-  	logLikold=logLikold+model$logLik
+  	vmodel = model
+  	vmodel$name = dimnames(x)[[2]][j]
+   	VariableModels=cbind(VariableModels,vmodel)
+  	par[1:(Ncats[j]-1),,j] =vmodel$beta
+  	logLikold=logLikold+vmodel$logLik
   }
   VariableModels=VariableModels[,2:(p+1)]
   
@@ -59,9 +75,10 @@ NominalLogBiplotEM <- function(x, dim = 2, nnodos = 10, tol = 1e-04, maxiter = 1
   	plot(ability[,1],ability[,2])
     text(ability[,1],ability[,2],1:q, pos=4, offset=0.2)
   }
-	#################### Inicialization of the parameters used in each iteration
+  
 	error = 1
-	iter = 0
+	iter = 0      
+  if(showResults) print("Starting iterations in the algorithm") 
 	while ((error > tol) & (iter < maxiter)) {
 		# E-step
 		iter = iter + 1
@@ -78,19 +95,24 @@ NominalLogBiplotEM <- function(x, dim = 2, nnodos = 10, tol = 1e-04, maxiter = 1
          ability[l, j] = ability[l, j] + X[k, j] * L[l, k] * A[k]
 			ability[l, j] = ability[l, j]/Pl[l]
 		}
-  	###################### M-step  -  Calculation of the parameters
+  	###################### M-step  
   	logLik=0
     for (j in 1:p){
+  	  if(showResults){print(paste("Adjusting variable ",j,sep=""))}     
  	  	model = RidgeMultinomialRegression(x[, j], ability, penalization = penalization, tol = tol, maxiter = maxiter,showIter = showResults)  	
- 	  	VariableModels[,j] = model
-    	par[1:(Ncats[j]-1),,j] =model$beta
-    	logLik=logLik+model$logLik
+ 	   	vmodel = model
+    	vmodel$name = dimnames(x)[[2]][j]  
+ 	  	VariableModels[,j] = vmodel
+    	par[1:(Ncats[j]-1),,j] =vmodel$beta
+    	logLik=logLik+vmodel$logLik
     }
 		error = abs((logLik - logLikold)/logLik)
-		if(showResults) print(c(iter, logLik, error))
 		logLikold = logLik
-		if(showResults) print(paste("iter:",iter," error:",error,sep=""))
+		if(showResults){
+       print(paste("Iteration ",iter,"- Log-Lik:",logLik," - Change:",error,sep=""))		
+    }
 	}
+  print(paste("Iteration ",iter,"- Log-Lik:",logLik," - Change:",error,sep=""))
 	if (Plot)
     	for (j in 1:p){
       	dev.new()
@@ -104,3 +126,4 @@ NominalLogBiplotEM <- function(x, dim = 2, nnodos = 10, tol = 1e-04, maxiter = 1
 	class(model) = "nominal.logistic.biplot.EM"
 	return(model)
 }
+

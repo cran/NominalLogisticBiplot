@@ -1,5 +1,5 @@
 # file NominalLogisticBiplot/R/Nominal2Binary.R
-# copyright (C) 2012-2013 J.C. Hernandez and J.L. Vicente-Villardon
+# copyright (C) 2012-2013 J.L. Vicente-Villardon and J.C. Hernandez
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by

@@ -1,10 +1,10 @@
 \name{NominalDistances}
 \alias{NominalDistances}
 \title{
-Distances between nominal variables.
+Distances between indidividuals calculated from nominal variables.
 }
 \description{
-This function calculates the hamming distances (or similarities) for a nominal data matrix. 
+This function calculates the hamming distances (or similarities) among individuals from a nominal data matrix. 
 }
 \usage{
 NominalDistances(x, similarities = FALSE)
@@ -25,9 +25,9 @@ The function returns a matrix with the distances or similarities
 Boriah, S., Chandola, V. & Kumar,V.(2008) \emph{Similarity measures for categorical data: A comparative evaluation}. In proceedings of the eight SIAM International Conference on Data Mining, pp 243--254
 }
 \author{
-Julio Cesar Hernandez Sanchez, Jose Luis Vicente-Villardon
+Jose Luis Vicente-Villardon,Julio Cesar Hernandez Sanchez
 
-Maintainer: Julio Cesar Hernandez Sanchez <juliocesar_avila@usal.es>
+Maintainer: Jose Luis Vicente-Villardon <villardon@usal.es>
 }
 \examples{
 

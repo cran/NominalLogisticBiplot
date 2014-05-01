@@ -1,0 +1,20 @@
+citHeader("To cite NominalLogisticBiplot in publications use:")
+
+
+citEntry(entry  = "Manual",
+ title  = "Nominal Logistic Biplots in R",
+ author = "Julio Cesar Hern\'andez S\'anchez and
+ Jos\'e Luis Vicente-Villard\'on",
+ 
+organization = "Universidad de Salamanca",address = "Salamanca, Spain", year= version$year,
+
+ 
+textVersion = 
+paste("J.C.Hern\'andez S\'anchez & J.L.Vicente-Villard\'on (", version$year, ").",
+"Nominal Logistic Biplots in R","Salamanca, Spain.",sep=""))
+
+
+citFooter("Lots of time and effort were invested in creating Nominal Logistic Biplot package.",
+          "Please, cite it when using it together with R.",
+          "See also", sQuote("citation()"),
+          "for citing R.")

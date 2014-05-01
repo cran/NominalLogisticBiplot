@@ -13,10 +13,10 @@ The sample data corresponds to 7 people and shows some demographic
   This data frame contains 7 observation for the following 5 columns:
   \describe{
     \item{Sex}{two levels (M=male,F=female)}  
-    \item{HairColor}{five levels of hair color (Dark, Grey, Fair and Brown)}
+    \item{HairColor}{four levels of hair color (Dark, Grey, Fair and Brown)}
     \item{Region}{(E = England,S = Scotland, W = Wales)}
     \item{Work}{(Manual,Clerical,Professional)}
-    \item{Education}{Education (School,Univ,Postgrad)}
+    \item{Education}{(School,Univ,Postgrad)}
   }
 }
 \source{

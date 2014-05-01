@@ -12,7 +12,7 @@ hermquad(N)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{N}{
-Number of nodes
+Number of nodes for the quadrature
 }
 }
 
@@ -29,9 +29,9 @@ Stroud, A.H. and Secrest, D. (1966) \emph{Gaussian Quadrature Formulas}, Englewo
  Hildebrand,F. B. (1987) \emph{Intoduction to Numerical Analysis 2nd Ed}, Dover Publications, New York,  page 385
 }
 \author{
-Julio Cesar Hernandez Sanchez, Jose Luis Vicente-Villardon
+Jose Luis Vicente-Villardon,Julio Cesar Hernandez Sanchez
 
-Maintainer: Julio Cesar Hernandez Sanchez <juliocesar_avila@usal.es>
+Maintainer: Jose Luis Vicente-Villardon <villardon@usal.es>
 }
 
 \examples{

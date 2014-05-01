@@ -7,9 +7,9 @@ Function that calculates the parameters of the Nominal Logistic Biplot according
 
 \usage{
 NominalLogisticBiplot(datanom, sFormula = NULL, numFactors = 2,
-coordinates = "EM", rotation = "varimax", metfsco = "EAP",
+method = "EM", rotation = "varimax", metfsco = "EAP",
 nnodos = 10, tol = 1e-04, maxiter = 100, penalization = 0.1,
-cte = TRUE, show = FALSE)
+cte = TRUE,initial=1,alfa=1, show = FALSE)
 }
 \arguments{
   \item{datanom}{
@@ -21,7 +21,7 @@ This parameter follows the unifying interface for selecting variables from a dat
   \item{numFactors}{
 Number of dimensions of the solution. It should be lower than the number of variables. It has a default value of 2.
 }
-  \item{coordinates}{
+  \item{method}{
 This parameter can be: "EM", "ACM", "MIRT" or "PCOA". Method to compute the row coordinates.
 }
   \item{rotation}{
@@ -44,6 +44,12 @@ Penalization for the ridge regression for each variable.
 }
   \item{cte}{
 Include constant in the logistic regression model. Default is TRUE.
+}
+  \item{initial}{
+Value to decide the method(1-Correspondence analysis, 2-Mirt) that calculates the initial abilities values for the individuals. 
+}
+  \item{alfa}{  
+If initial parameter method is correspondence analysis, this parameter determines the weight for rows and columns.
 }
   \item{show}{
 Show intermediate copmputations. Default is TRUE.
@@ -69,10 +75,10 @@ Each pair of response surfaces defined by intersect in a straight line that, pro
 An object of class \code{"nominal.logistic.biplot"}.  This has some components:
 
   \item{dataSet }{Data set of study with all the information about the name of the levels and names of the variables and individuals}
-  \item{ItemsCoords }{Coordinates for the rows in the reduced space}
+  \item{RowCoords }{Coordinates for the individuals in the reduced space}
   \item{VariableModels }{Information of the regression resuls for each variable.}
   \item{NumFactors  }{Number of dimensions selected for the study}
-  \item{Coordinates }{Type of coordinates to calculate the row positions}
+  \item{Method }{Method for calculating the row positions}
   \item{Rotation }{Type of rotation if we have chosen mirt coordinates}
   \item{Methodfscores }{Method of calculation of the fscores in mirt process}
   \item{NumNodos }{Number of nodes for the gauss quadrature in EM algorith}
@@ -120,8 +126,25 @@ Maintainer: Julio Cesar Hernandez Sanchez <juliocesar_avila@usal.es>
 
 data(HairColor)
 nlbo = NominalLogisticBiplot(HairColor,sFormula=NULL,
-numFactors=2,coordinates="EM",penalization=0.2,show=FALSE)
+numFactors=2,method="EM",penalization=0.2,show=FALSE)
 nlbo
+
+#data(PhD_nomCyL)
+#cyl = NominalLogisticBiplot(PhD_nomCyL,sFormula=NULL,
+#numFactors=2,method="EM",initial = 1,penalization=0.3,show=FALSE)
+#summary(nlboPhD)
+#plot(nlboPhD,QuitNotPredicted=TRUE,ReestimateInFocusPlane=TRUE,
+#      planex = 1,planey = 2,proofMode=TRUE,LabelInd=FALSE,AtLeastR2 = 0.01,
+#      xlimi=-1.5,xlimu=1.5,ylimi=-1.5,ylimu=1.5,linesVoronoi = TRUE,SmartLabels = FALSE,
+#      PlotInd=TRUE,
+#      CexInd = c(0.4),                                                           
+#      PchInd = c(1),
+#      ColorInd="azure3",
+#      PlotVars=TRUE,LabelVar = TRUE,
+#      PchVar = c(1,2,3,4,5,6,7,8,9),ColorVar = c("red","black","maroon","blue","green",
+#      "chocolate4","coral3","brown","brown2"),
+#      ShowResults=TRUE)
+
 
 }
 \keyword{biplot}

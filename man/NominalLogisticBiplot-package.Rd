@@ -5,7 +5,7 @@
 Nominal Logistic Biplot representations for polytomous data
 }
 \description{
-Analysis of a matrix of polytomous items using Nominal Logistic Biplots (NLB) according to Hernandez-Sanchez & Vicente-Villardon (2013). The NLB procedure extends the binary logistic biplot to nominal (polytomous) data. The  individuals are represented as points on a plane and the  variables are represented as convex prediction regions rather than vectors as in a classical or binaly biplot. Using the methods from
+Analysis of a matrix of polytomous items using Nominal Logistic Biplots (NLB) according to Hernandez-Sanchez & Vicente-Villardon (2013). The NLB procedure extends the binary logistic biplot to nominal (polytomous) data. The  individuals are represented as points on a plane and the  variables are represented as convex prediction regions rather than vectors as in a classical or binaly biplot. Using the methods from the
   Computational Geometry, the set of prediction regions is converted to a set of points
   in such a way that the prediction for each individual is established by its closest
   "category point". Then interpretation is based on distances rather than on projections.
@@ -31,7 +31,7 @@ Maintainer: Julio Cesar Hernandez Sanchez <juliocesar_avila@usal.es>
 \examples{
 data(HairColor)
 nlbo = NominalLogisticBiplot(HairColor,sFormula=NULL,numFactors=2,
-coordinates="EM",penalization=0.2,show=FALSE)
+method="EM",penalization=0.2,show=FALSE)
 summary(nlbo)
 plot(nlbo,QuitNotPredicted=TRUE,ReestimateInFocusPlane=TRUE,
 planex = 1,planey = 2,proofMode=TRUE,LabelInd=TRUE,AtLeastR2 = 0.01

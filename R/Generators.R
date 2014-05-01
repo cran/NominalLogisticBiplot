@@ -140,8 +140,6 @@ Generators <- function(beta) {
 	# This is the incidence matrix, square matrix with the real points in rows and columns
 	# the elements are 1 when te points are connected and 0 otherwise
 
-  #It is necessary to be careful in the case of number of categories be higher than 3,
-  #because it could be posible than due to hidden categories, the number of real points could be one.
   if((ngrup > 3) & (nr > 1)){
   	for (i in 1:(nr - 1))
      for (j in (i + 1):nr)
@@ -150,9 +148,6 @@ Generators <- function(beta) {
     		Joint[j, i] = 1
     	}
 	}
-
-  #If number of categories is 3 and there is not hidden categories, as there is only one
-  #real point, Joint will be a 1x1 matrix with a zero value.
 
 	# variables for the coordinates of the dummy points
 	dummy.x = NULL
@@ -251,9 +246,8 @@ Generators <- function(beta) {
 				break
 			}
 		}
-
-		#This is the case with three categories and Joint is a 1x1 matrix with a zero value
 		if (sum(Joint[i, ]) == 0) {
+
 			 IndDummy = matrix(0,3,2)
 	     IndDummy[1,] = c(IndReal[1,1],IndReal[1,2])
 	     IndDummy[2,] = c(IndReal[1,1],IndReal[1,3])
@@ -265,22 +259,20 @@ Generators <- function(beta) {
 			   xnTR = cbind(matrix(1, 1, 1), xn[1,2] + 2, a[IndDummy[i,1],IndDummy[i,2]] + b[IndDummy[i,1],IndDummy[i,2]]*(xn[1,2] + 2))
 			   xnTL = cbind(matrix(1, 1, 1), xn[1,2] - 2, a[IndDummy[i,1],IndDummy[i,2]] + b[IndDummy[i,1],IndDummy[i,2]]*(xn[1,2] - 2))
 			   
-			   #It could be than a variable has more than three categories and only a real point
-			   #We calculate the probabilities to the right of the real point
       	 pisubiR = matrix(0, 1, ngrup)
     		 denom = 1
     		 for (j in 1:(ngrup - 1)) denom = denom + exp(sum(beta[j, ] * xnTR[1, ]))
     		 for (j in 1:(ngrup - 1)) pisubiR[1, (j + 1)] = exp(sum(beta[j, ] * xnTR[1, ]))/denom
     		 pisubiR[1, 1] = 1/denom
 
-			   #It could be than a variable has more than three categories and only a real point
-			   #We calculate the probabilities to the left of the real point
-      	 pisubiL = matrix(0, 1, ngrup)
+       	 pisubiL = matrix(0, 1, ngrup)
     		 denom = 1
-    		 for (j in 1:(ngrup - 1)) denom = denom + exp(sum(beta[j, ] * xnTL[1, ]))
-    		 for (j in 1:(ngrup - 1)) pisubiL[1, (j + 1)] = exp(sum(beta[j, ] * xnTL[1, ]))/denom
+    		 for (j in 1:(ngrup - 1)){
+             denom = denom + exp(sum(beta[j, ] * xnTL[1, ]))
+         }
+     
+    		 for (j in 1:(ngrup - 1)) pisubiL[1, (j + 1)] = exp(sum(beta[j, ] * xnTL[1, ]))/denom               
     		 pisubiL[1, 1] = 1/denom
-
          if ((pisubiL[1,IndDummy[i,1]] > pisubiR[1,IndDummy[i,1]]) &
                 (pisubiL[1,IndDummy[i,2]] > pisubiR[1,IndDummy[i,2]])) {
   				cx = xn[1,2] - 2
@@ -299,8 +291,7 @@ Generators <- function(beta) {
   if((ngrup > 3)&(nr > 1)){
   	Borders = matrix(0, sum(sum(Joint))/2, 2)
 
-  	# Obtain the borders of the graph
-  	l = 0
+   	l = 0
   	for (i in 1:(nr - 1)) for (j in (i + 1):nr) if (Joint[i, j] == 1) {
   		l = l + 1
   		Borders[l, ] = sort(intersect(IndReal[i, ], IndReal[j, ]))
@@ -330,7 +321,6 @@ Generators <- function(beta) {
       contVisible = contVisible + 1
     }
   }
-  #The equivalence matrix is recodified to have in mind hidden categories
   BordersWH = Borders
   for(i in 1:nborders){
      l = Borders[i, 1]
@@ -341,7 +331,6 @@ Generators <- function(beta) {
      BordersWH[i, 2] = equivRegiones[2,ind_m]
   }
 
-  #We invert the tesselation
   Coord = InvertTesselation(beta,Borders,BordersWH,nborders,ngrupvisible)
 
 	Centres = matrix(0, ngrupvisible, 2)
@@ -350,7 +339,7 @@ Generators <- function(beta) {
 		Centres[i, 2] = Coord[2 * i]
 	}
 
-  if(nr==1)
+ if(nr==1)
   {
     bP12 = (IntersectSegments(Coord[1,1],Coord[2,1],Coord[3,1],Coord[4,1],coorreal[1,1],coorreal[1,2],dummy.x[1],dummy.y[1])
      | IntersectSegments(Coord[1,1],Coord[2,1],Coord[3,1],Coord[4,1],coorreal[1,1],coorreal[1,2],dummy.x[2],dummy.y[2])
@@ -367,7 +356,7 @@ Generators <- function(beta) {
           CentresF[i,1]= 2*coorreal[1,1] - Centres[i, 1]
           CentresF[i,2]= 2*coorreal[1,2] - Centres[i, 2]
         }
-        bP12n = (IntersectSegments(CentresF[1,1],CentresF[1,2],CentresF[2,1],CentresF[2,2],coorreal[1,1],coorreal[1,2],dummy.x[1],dummy.y[1])
+       bP12n = (IntersectSegments(CentresF[1,1],CentresF[1,2],CentresF[2,1],CentresF[2,2],coorreal[1,1],coorreal[1,2],dummy.x[1],dummy.y[1])
          | IntersectSegments(CentresF[1,1],CentresF[1,2],CentresF[2,1],CentresF[2,2],coorreal[1,1],coorreal[1,2],dummy.x[2],dummy.y[2])
          | IntersectSegments(CentresF[1,1],CentresF[1,2],CentresF[2,1],CentresF[2,2],coorreal[1,1],coorreal[1,2],dummy.x[3],dummy.y[3]))
         bP13n = (IntersectSegments(CentresF[1,1],CentresF[1,2],CentresF[3,1],CentresF[3,2],coorreal[1,1],coorreal[1,2],dummy.x[1],dummy.y[1])
@@ -376,14 +365,14 @@ Generators <- function(beta) {
         bP23n = (IntersectSegments(CentresF[2,1],CentresF[2,2],CentresF[3,1],CentresF[3,2],coorreal[1,1],coorreal[1,2],dummy.x[1],dummy.y[1])
              | IntersectSegments(CentresF[2,1],CentresF[2,2],CentresF[3,1],CentresF[3,2],coorreal[1,1],coorreal[1,2],dummy.x[2],dummy.y[2])
              | IntersectSegments(CentresF[2,1],CentresF[2,2],CentresF[3,1],CentresF[3,2],coorreal[1,1],coorreal[1,2],dummy.x[3],dummy.y[3]))
-        if((bP12n == TRUE) & (bP13n == TRUE) & (bP23n == TRUE)){
+       if((bP12n == TRUE) & (bP13n == TRUE) & (bP23n == TRUE)){
            Centres[,1]=CentresF[,1]
            Centres[,2]=CentresF[,2]
         }
     }
-    if(sqrt((coorreal[1,1]-Centres[i,1])^2+(coorreal[1,2]-Centres[i,2])^2) < 0.3){  #Si la distancia entre el punto real y los de la inversión es pequeña
+    if(sqrt((coorreal[1,1]-Centres[i,1])^2+(coorreal[1,2]-Centres[i,2])^2) < 0.3){  #Si la distancia entre el punto real y los de la inversion es pequeña
       CentresC = matrix(0, ngrupvisible, 2)
-      for(i in 1:ngrupvisible){ #ngrupvisible será 3
+      for(i in 1:ngrupvisible){ 
           pte = (Centres[i,2]-coorreal[1,2])/(Centres[i,1]-coorreal[1,1])
           oo = coorreal[1,2] - coorreal[1,1]*pte
           a = pte*pte + 1
@@ -392,7 +381,7 @@ Generators <- function(beta) {
           xs = Eq2gSolve(a,b,c)
           inSegment = ((Centres[i,1] > coorreal[1,1])&(Centres[i,1] < xs[1,1]))
           if(inSegment == TRUE) {
-               CentresC[i,1] = xs[1,1]   #La primera raíz es la mayor de las dos
+               CentresC[i,1] = xs[1,1]
                CentresC[i,2] = xs[1,1]*pte + oo
           }else{
                CentresC[i,1] = xs[1,2]
@@ -402,12 +391,8 @@ Generators <- function(beta) {
       Centres = CentresC
     }
 
+  }
 
-   }
-
-	# The algorithm does not include degenerate cases as colinear vertices or points situated on a grid.
-
-	# Store the results in a list to match the voronoi class to plot the diagram
 	result = list()
 	result$x = coorreal[, 1]
 	result$y = coorreal[, 2]
@@ -425,4 +410,3 @@ Generators <- function(beta) {
 	class(result) <- "voronoiprob"
 	return(result)
 }
-
